@@ -15,11 +15,11 @@ from data_generator import DataGenerator
 from utilities import (create_folder, get_filename, create_logging,
                        calculate_confusion_matrix, calculate_accuracy, 
                        print_confusion_matrix, print_accuracy, print_accuracy_binary)
-from models_pytorch import move_data_to_gpu, DecisionLevelMaxPooling
+from models_att import move_data_to_gpu, DecisionLevelMaxPooling_Att
 import config
 
 
-Model = DecisionLevelMaxPooling
+Model = DecisionLevelMaxPooling_Att
 batch_size = 16
 
 
@@ -85,7 +85,7 @@ def forward(model, generate_func, cuda):
         batch_x = move_data_to_gpu(batch_x, cuda)
         # Predict
         model.eval()
-        batch_output = model(batch_x)
+        _, _, batch_output = model(batch_x, False, 'none')
 
         # Append data
         outputs.append(batch_output.data.cpu().numpy())
@@ -125,7 +125,7 @@ def train(args):
         dev_train_csv = os.path.join(dataset_dir, 'meta_data', 'meta_traindev.csv')
         dev_validate_csv = os.path.join(dataset_dir, 'meta_data', 'meta_test.csv')
         
-    models_dir = os.path.join(workspace, 'models', subdir)
+    models_dir = os.path.join(workspace, 'att_models', subdir)
     create_folder(models_dir)
 
     # Model
@@ -196,7 +196,7 @@ def train(args):
         batch_y = move_data_to_gpu(batch_y, cuda)
         # Train
         model.train()
-        batch_output = model(batch_x)
+        _, _, batch_output = model(batch_x, False, 'none')
 
         loss = F.nll_loss(batch_output, batch_y, weight=class_weight)
 
@@ -232,7 +232,7 @@ def inference_validation_data(args):
         dev_train_csv = os.path.join(dataset_dir, 'meta_data', 'meta_traindev.csv')
         dev_validate_csv = os.path.join(dataset_dir, 'meta_data', 'meta_test.csv')
 
-    model_path = os.path.join(workspace, 'models', subdir, 'md_{}_iters.tar'.format(iteration_max))
+    model_path = os.path.join(workspace, 'att_models', subdir, 'md_{}_iters.tar'.format(iteration_max))
 
     # Load model
     model = Model(classes_num)

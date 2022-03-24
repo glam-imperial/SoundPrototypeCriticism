@@ -277,3 +277,109 @@ def plot_prototypes(audio_names, x_logmel, distance, path_folder):
             plt.matshow(x_logmel[i].T, origin='lower', aspect='auto', cmap='jet')
             plt.savefig(os.path.join(path_folder, audio_names[i] + '_y=' + str(i) + '_dist_' + str(distance[i]) +'.pdf'))
 
+
+import torchlibrosa as tl
+import torch
+def extract_spectrograms(audio_input):
+    sample_rate=config.sample_rate
+    window_size = config.win_length
+    hop_size = config.hop_length
+    mel_bins = config.mel_bins
+    window = 'hann'
+    center = True
+    pad_mode = 'reflect'
+    ref = 1.0
+    amin = 1e-10
+    top_db = None
+    spectrogram_extractor = tl.Spectrogram(n_fft=window_size, hop_length=hop_size,
+            win_length=window_size, window=window, center=center, pad_mode=pad_mode,
+            freeze_parameters=True)
+    logmel_extractor = tl.LogmelFilterBank(sr=sample_rate, n_fft=window_size,
+            n_mels=mel_bins, fmin=20, fmax=2000, ref=ref, amin=amin, top_db=top_db,
+            freeze_parameters=True)
+    x = spectrogram_extractor(audio_input)   # (batch_size, 1, time_steps, freq_bins)
+    x = logmel_extractor(x)    # (batch_size, 1, time_steps, mel_bins)
+    batch_size, channel_num, _, mel_bins = x.shape
+    x_diff1 = torch.diff(x, n=1, dim=2, append=x[:, :, -1, :].view((batch_size, channel_num, 1, mel_bins)))
+    x_diff2 = torch.diff(x_diff1, n=1, dim=2, append=x_diff1[:, :, -1, :].view((batch_size, channel_num, 1, mel_bins)))
+    # for the caanet, only the log mel spectrograms
+    # x = torch.cat((x, x_diff1, x_diff2), dim=1)
+    return x
+
+
+def plot_att(atts_label, atts_org, atts):
+    for key, value in atts.items():
+        att = value[0] # (num_class, 126 * 128)
+        label = atts_label[key][0] # (num_class, )
+        # print(label.shape, label, np.argmax(label))
+        att = att[np.argmax(label)]  # (126*128, )
+        att = att.reshape((126, 128))
+        # att = np.squeeze(att)
+        im = plt.matshow(att.T, origin='lower', aspect='auto', cmap='jet')
+        plt.colorbar(im)
+        plt.savefig('{}_att.jpg'.format(key))
+        plt.close()
+ 
+        median_val = np.median(att)
+        att_org = atts_org[key][0] # (1, 126, 128)
+        att_org = np.squeeze(att_org) # (126, 128)
+        for iy, ix in np.ndindex(att.shape):
+            if att[iy, ix] < median_val:
+                att_org[iy, ix] = None
+        
+        im = plt.matshow(att_org.T, origin='lower', aspect='auto', cmap='jet')
+        # plt.colorbar(im)
+        plt.savefig('{}_att_org.jpg'.format(key))
+        plt.close()
+
+
+# for tsne plotting
+from sklearn.manifold import TSNE
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+
+def plot_embedding_2D(data, label, pros, cris, title):
+    x_min, x_max = np.min(data, 0), np.max(data, 0)
+    data = (data - x_min) / (x_max - x_min)
+    fig = plt.figure()
+    for i in range(data.shape[0]):
+        if i in pros:
+            plt.text(data[i, 0], data[i, 1], str(label[i])+'_pro',
+                     color=plt.cm.Set1(label[i]),
+                     fontdict={'weight': 'bold', 'size': 15})
+        elif i in cris:
+            plt.text(data[i, 0], data[i, 1], str(label[i])+'_cri',
+                     color=plt.cm.Set1(label[i]),
+                     fontdict={'weight': 'bold', 'size': 15})
+        else:
+            plt.text(data[i, 0], data[i, 1], str(label[i]),
+                     color=plt.cm.Set1(label[i]),
+                     fontdict={'weight': 'light', 'size': 5})
+
+    # plt.xticks([])
+    # plt.yticks([])
+    plt.title(title)
+    patch_0 = mpatches.Patch(color=plt.cm.Set1(0), label='Normal')
+    patch_1 = mpatches.Patch(color=plt.cm.Set1(1), label='Crackle')
+    patch_2 = mpatches.Patch(color=plt.cm.Set1(2), label='Wheeze')
+    patch_3 = mpatches.Patch(color=plt.cm.Set1(3), label='Both')
+    plt.legend(handles=[patch_0, patch_1, patch_2, patch_3])
+    plt.savefig('{}.pdf'.format(title))
+    plt.close()
+
+def plot_embedding_3D(data,label, pros, cris, title):
+    x_min, x_max = np.min(data,axis=0), np.max(data,axis=0)
+    data = (data- x_min) / (x_max - x_min)
+    # ax = plt.figure().add_subplot(111,projection='3d')
+    fig = plt.figure()
+    ax =fig.add_subplot(111,projection='3d')
+    for i in range(data.shape[0]):
+        if i in pros:
+            ax.text(data[i, 0], data[i, 1], data[i,2],str(label[i])+'_pro', color=plt.cm.Set1(label[i]),fontdict={'weight': 'bold', 'size': 15})
+        elif i in cris:
+            ax.text(data[i, 0], data[i, 1], data[i,2],str(label[i])+'_cris', color=plt.cm.Set1(label[i]),fontdict={'weight': 'bold', 'size': 15})
+        else:
+            ax.text(data[i, 0], data[i, 1], data[i,2],str(label[i]), color=plt.cm.Set1(label[i]),fontdict={'weight': 'light', 'size': 5})
+    plt.savefig('{}.pdf'.format(title))
+    plt.close()
+
