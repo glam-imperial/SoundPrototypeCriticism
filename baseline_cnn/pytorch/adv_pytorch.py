@@ -17,55 +17,20 @@ from utilities import (create_folder, get_filename, create_logging,
                        print_confusion_matrix, print_accuracy, print_accuracy_binary,
                        plot_embedding_2D, plot_embedding_3D)
 from attackers import BIM
-from models_pytorch import move_data_to_gpu, DecisionLevelMaxPooling
+from models_org import move_data_to_gpu, DecisionLevelMaxPooling
+from models_att import DecisionLevelMaxPooling_Att
+from models_dia_att import DecisionLevelMaxPooling_Dia_Att
 import config
 
 
 Model = DecisionLevelMaxPooling
+Model = DecisionLevelMaxPooling_Att
+Model = DecisionLevelMaxPooling_Dia_Att
 batch_size = 16
 CLIP_MAX = 0.5
 CLIP_MIN = -0.5
 prototypes = ['193_1b2_Ar_mc_AKGC417L_0.wav', '186_2b3_Lr_mc_AKGC417L_4.wav', '193_1b2_Al_mc_AKGC417L_10.wav', '114_1b4_Pl_mc_AKGC417L_2.wav']
 criticisms = ['141_1b1_Pr_mc_LittC2SE_0.wav', '199_2b1_Ll_mc_LittC2SE_1.wav', '112_1p1_Ll_sc_Litt3200_4.wav', '141_1b2_Ar_mc_LittC2SE_3.wav']
-
-def evaluate(model, generator, data_type, max_iteration, cuda):
-    """Evaluate
-    
-    Args:
-      model: object.
-      generator: object.
-      data_type: 'train' | 'validate'.
-      max_iteration: int, maximum iteration for validation
-      cuda: bool.
-      
-    Returns:
-      accuracy: float
-    """
-    
-    # Generate function
-    generate_func = generator.generate_validate(data_type=data_type,
-                                                shuffle=True, 
-                                                max_iteration=max_iteration)
-            
-    # Forward
-    dict = forward(model=model, 
-                   generate_func=generate_func, 
-                   cuda=cuda)
-
-    outputs = dict['output']    # (audios_num, classes_num)
-    targets = dict['target']    # (audios_num, classes_num)
-    
-    predictions = np.argmax(outputs, axis=-1)   # (audios_num,)
-
-    # Evaluate
-    classes_num = outputs.shape[-1]
-
-    loss = F.nll_loss(Variable(torch.Tensor(outputs)), Variable(torch.LongTensor(targets))).data.numpy()
-    loss = float(loss)
-    
-    accuracy = calculate_accuracy(targets, predictions, classes_num, average='macro')
-
-    return accuracy, loss
 
 def forward(model, generate_func, cuda, attacker):
     """Forward data to a model.

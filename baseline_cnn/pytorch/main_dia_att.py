@@ -113,6 +113,7 @@ def train(args):
     validate = args.validate
     iteration_max = args.iteration_max
     cuda = args.cuda
+    isres = args.isres
 
     labels = config.labels
     classes_num = len(labels)
@@ -124,12 +125,15 @@ def train(args):
     else:
         dev_train_csv = os.path.join(dataset_dir, 'meta_data', 'meta_traindev.csv')
         dev_validate_csv = os.path.join(dataset_dir, 'meta_data', 'meta_test.csv')
-        
-    models_dir = os.path.join(workspace, 'dia_att_models', subdir)
+    
+    if isres:
+        models_dir = os.path.join(workspace, 'dia_att_res_models', subdir)
+    else:
+        models_dir = os.path.join(workspace, 'dia_att_models', subdir)
     create_folder(models_dir)
 
     # Model
-    model = Model(classes_num)
+    model = Model(classes_num, isres)
 
     if cuda:
         model.cuda()
@@ -219,6 +223,7 @@ def inference_validation_data(args):
     iteration_max = args.iteration_max
     filename = args.filename
     cuda = args.cuda
+    isres = args.isres
 
     labels = config.labels
     classes_num = len(labels)
@@ -231,10 +236,13 @@ def inference_validation_data(args):
         dev_train_csv = os.path.join(dataset_dir, 'meta_data', 'meta_traindev.csv')
         dev_validate_csv = os.path.join(dataset_dir, 'meta_data', 'meta_test.csv')
 
-    model_path = os.path.join(workspace, 'dia_att_models', subdir, 'md_{}_iters.tar'.format(iteration_max))
+    if isres:
+        model_path = os.path.join(workspace, 'dia_att_res_models', subdir, 'md_{}_iters.tar'.format(iteration_max))
+    else:
+        model_path = os.path.join(workspace, 'dia_att_models', subdir, 'md_{}_iters.tar'.format(iteration_max))
 
     # Load model
-    model = Model(classes_num)
+    model = Model(classes_num, isres)
     param_num = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('param number:')
     print(param_num)
@@ -301,6 +309,7 @@ if __name__ == '__main__':
     parser_train.add_argument('--validate', action='store_true', default=False)
     parser_train.add_argument('--iteration_max', type=int, required=True)
     parser_train.add_argument('--cuda', action='store_true', default=False)
+    parser_train.add_argument('--isres', action='store_true', default=False)
     
     parser_inference_validation_data = subparsers.add_parser('inference_validation_data')
     parser_inference_validation_data.add_argument('--dataset_dir', type=str, required=True)
@@ -309,6 +318,7 @@ if __name__ == '__main__':
     parser_inference_validation_data.add_argument('--validate', action='store_true', default=False)
     parser_inference_validation_data.add_argument('--iteration_max', type=int, required=True)
     parser_inference_validation_data.add_argument('--cuda', action='store_true', default=False)
+    parser_inference_validation_data.add_argument('--isres', action='store_true', default=False)
 
     args = parser.parse_args()
 

@@ -47,18 +47,18 @@ def init_bn(bn):
 
 
 class ConvBlock(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, in_channels, out_channels, dilation):
         super(ConvBlock, self).__init__()
 
         self.conv1 = nn.Conv2d(in_channels=in_channels,
                                out_channels=out_channels,
                                kernel_size=(3, 3), stride=(1, 1),
-                               padding=(1, 1), bias=False)
+                               padding=(dilation, dilation), dilation=dilation, bias=False)
 
         self.conv2 = nn.Conv2d(in_channels=out_channels,
                                out_channels=out_channels,
                                kernel_size=(3, 3), stride=(1, 1),
-                               padding=(1, 1), bias=False)
+                               padding=(dilation, dilation), dilation=dilation, bias=False)
 
         self.bn1 = nn.BatchNorm2d(out_channels)
         self.bn2 = nn.BatchNorm2d(out_channels)
@@ -88,25 +88,25 @@ class ConvBlock(nn.Module):
             x2 = F.max_pool2d(x, kernel_size=pool_size)
             x = x1 + x2
         elif pool_type == 'none':
-            x = x 
+            x = x
         else:
             raise Exception('Incorrect argument!')
         
         return x
 
 class ResBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, stride):
+    def __init__(self, in_channels, out_channels, stride, dilation):
         super(ResBlock, self).__init__()
 
         self.conv1 = nn.Conv2d(in_channels=in_channels,
                                out_channels=out_channels,
-                               kernel_size=(3, 3), stride=stride,
-                               padding=(1, 1), bias=False)
+                               kernel_size=(3, 3), stride=stride, dilation=dilation,
+                               padding=(dilation, dilation), bias=False)
 
         self.conv2 = nn.Conv2d(in_channels=out_channels,
                                out_channels=out_channels,
-                               kernel_size=(3, 3), stride=(1, 1),
-                               padding=(1, 1), bias=False)
+                               kernel_size=(3, 3), stride=(1, 1), dilation=dilation, 
+                               padding=(dilation, dilation), bias=False)
         
         self.conv3 = nn.Conv2d(in_channels=in_channels,
                                out_channels=out_channels,
@@ -141,7 +141,7 @@ class ResBlock(nn.Module):
             x = F.relu_(x)
         elif activation == 'sigmoid':
             x = torch.sigmoid(x)
-        
+
         if pool_type == 'max':
             x = F.max_pool2d(x, kernel_size=pool_size)
         elif pool_type == 'avg':
@@ -150,15 +150,16 @@ class ResBlock(nn.Module):
             x1 = F.avg_pool2d(x, kernel_size=pool_size)
             x2 = F.max_pool2d(x, kernel_size=pool_size)
             x = x1 + x2
+        elif pool_type == 'none':
+            x = x
         else:
             raise Exception('Incorrect argument!')
-        
+
         return x
 
-
-class DecisionLevelMaxPooling_Att(nn.Module):
+class DecisionLevelMaxPooling_Dia(nn.Module):
     def __init__(self, classes_num, isres):
-        super(DecisionLevelMaxPooling_Att, self).__init__()
+        super(DecisionLevelMaxPooling_Dia, self).__init__()
         sample_rate=config.sample_rate
         window_size = config.win_length
         hop_size = config.hop_length
@@ -211,15 +212,17 @@ class DecisionLevelMaxPooling_Att(nn.Module):
             x_array = np.squeeze(x_array)
             plt.matshow(x_array.T, origin='lower', aspect='auto', cmap='jet')
             plt.savefig('{}.jpg'.format(audio_name))
-        
-        x = self.cnn_encoder(x) # (batch_size, 512, hidden units)
-        att, output = self.attention(x) # output dim: (batch_size, class_num)
 
+        x = self.cnn_encoder(x)
+
+        # (samples_num, 512, hidden_units)
+        output = F.max_pool2d(x, kernel_size=x.shape[2:])
+        output = output.view(output.shape[0:2])
         # for tsne, features before the final fc layer
-        # output_tsne = output
-        output = F.log_softmax(output, dim=-1)
+        output_tsne = output
+        output = F.log_softmax(self.fc_final(output), dim=-1)
 
-        return logmel_x, att, output
+        return logmel_x, output_tsne, output
 
 
 class CNN_encoder(nn.Module):
@@ -227,10 +230,10 @@ class CNN_encoder(nn.Module):
         super(CNN_encoder, self).__init__()
 
         self.bn0 = nn.BatchNorm2d(128)
-        self.conv1 = ConvBlock(in_channels=3, out_channels=64)
-        self.conv2 = ConvBlock(in_channels=64, out_channels=128)
-        self.conv3 = ConvBlock(in_channels=128, out_channels=256)
-        self.conv4 = ConvBlock(in_channels=256, out_channels=512)
+        self.conv1 = ConvBlock(in_channels=3, out_channels=64, dilation=1)
+        self.conv2 = ConvBlock(in_channels=64, out_channels=128, dilation=2)
+        self.conv3 = ConvBlock(in_channels=128, out_channels=256, dilation=4)
+        self.conv4 = ConvBlock(in_channels=256, out_channels=512, dilation=8)
 
         self.init_weights()
 
@@ -244,17 +247,16 @@ class CNN_encoder(nn.Module):
         x = x.transpose(1, 3)
 
         # (samples_num, channel, time_steps, freq_bins)
-        x = self.conv1(x, pool_size=(2, 2), pool_type='max')
+        x = self.conv1(x, pool_size=(2, 2), pool_type='none')
         x = F.dropout(x, p=0.2, training=self.training)
-        x = self.conv2(x, pool_size=(2, 2), pool_type='max')
+        x = self.conv2(x, pool_size=(2, 2), pool_type='none')
         x = F.dropout(x, p=0.2, training=self.training)
-        x = self.conv3(x, pool_size=(2, 2), pool_type='max')
+        x = self.conv3(x, pool_size=(2, 2), pool_type='none')
         x = F.dropout(x, p=0.2, training=self.training)
-        x = self.conv4(x, pool_size=(2, 2), pool_type='max')
+        x = self.conv4(x, pool_size=(2, 2), pool_type='none')
         x = F.dropout(x, p=0.2, training=self.training)
 
         return x
-
 
 
 class Res_encoder(nn.Module):
@@ -262,10 +264,10 @@ class Res_encoder(nn.Module):
         super(Res_encoder, self).__init__()
 
         self.bn0 = nn.BatchNorm2d(128)
-        self.conv1 = ResBlock(in_channels=3, out_channels=64, stride=(1,1))
-        self.conv2 = ResBlock(in_channels=64, out_channels=128, stride=(1,1))
-        self.conv3 = ResBlock(in_channels=128, out_channels=256, stride=(1,1))
-        self.conv4 = ResBlock(in_channels=256, out_channels=512, stride=(1,1))
+        self.conv1 = ResBlock(in_channels=3, out_channels=64, stride=(1,1), dilation=1)
+        self.conv2 = ResBlock(in_channels=64, out_channels=128, stride=(1,1), dilation=2)
+        self.conv3 = ResBlock(in_channels=128, out_channels=256, stride=(1,1), dilation=4)
+        self.conv4 = ResBlock(in_channels=256, out_channels=512, stride=(1,1), dilation=8)
 
         self.init_weights()
 
@@ -279,80 +281,13 @@ class Res_encoder(nn.Module):
         x = x.transpose(1, 3)
 
         # (samples_num, channel, time_steps, freq_bins)
-        x = self.conv1(x, pool_size=(2, 2), pool_type='max')
+        x = self.conv1(x, pool_size=(2, 2), pool_type='none')
         x = F.dropout(x, p=0.2, training=self.training)
-        x = self.conv2(x, pool_size=(2, 2), pool_type='max')
+        x = self.conv2(x, pool_size=(2, 2), pool_type='none')
         x = F.dropout(x, p=0.2, training=self.training)
-        x = self.conv3(x, pool_size=(2, 2), pool_type='max')
+        x = self.conv3(x, pool_size=(2, 2), pool_type='none')
         x = F.dropout(x, p=0.2, training=self.training)
-        x = self.conv4(x, pool_size=(2, 2), pool_type='max')
+        x = self.conv4(x, pool_size=(2, 2), pool_type='none')
         x = F.dropout(x, p=0.2, training=self.training)
 
         return x
-
-
-class Attention2d(nn.Module):
-    def __init__(self, n_in, n_out, att_activation, cla_activation):
-        super(Attention2d, self).__init__()
-
-        self.att_activation = att_activation
-        self.cla_activation = cla_activation
-
-        self.att = nn.Conv2d(
-            in_channels=n_in, out_channels=n_out, kernel_size=(
-                1, 1), stride=(
-                1, 1), padding=(
-                0, 0), bias=True)
-
-        self.cla = nn.Conv2d(
-            in_channels=n_in, out_channels=n_out, kernel_size=(
-                1, 1), stride=(
-                1, 1), padding=(
-                0, 0), bias=True)
-
-        self.init_weights()
-
-    def init_weights(self):
-        init_layer(self.att)
-        init_layer(self.cla)
-        self.att.weight.data.fill_(0.)
-
-    def activate(self, x, activation):
-
-        if activation == 'linear':
-            return x
-
-        elif activation == 'relu':
-            return F.relu(x)
-
-        elif activation == 'sigmoid':
-            return F.sigmoid(x)+0.1
-
-        elif activation == 'log_softmax':
-            return F.log_softmax(x, dim=1)
-
-    def forward(self, x):
-        """input: (samples_num, channel, time_steps, freq_bins)
-        """
-
-        att = self.att(x)
-        att = self.activate(att, self.att_activation)
-
-        cla = self.cla(x)
-        cla = self.activate(cla, self.cla_activation)
-
-        # (samples_num, channel, time_steps * freq_bins)
-        att = att.view(att.size(0), att.size(1), att.size(2) * att.size(3))
-        cla = cla.view(cla.size(0), cla.size(1), cla.size(2) * cla.size(3))
-
-        epsilon = 0.1 # 1e-7
-        att = torch.clamp(att, epsilon, 1. - epsilon)
-
-        norm_att = att / torch.sum(att, dim=2)[:, :, None]
-        x = torch.sum(norm_att * cla, dim=2)
-
-        Return_heatmap = True
-        if Return_heatmap:
-            return att, x
-        else:
-            return x

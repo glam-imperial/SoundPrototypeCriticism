@@ -15,11 +15,11 @@ from data_generator import DataGenerator
 from utilities import (create_folder, get_filename, create_logging,
                        calculate_confusion_matrix, calculate_accuracy, 
                        print_confusion_matrix, print_accuracy, print_accuracy_binary)
-from models_org import move_data_to_gpu, DecisionLevelMaxPooling
+from models_dia import move_data_to_gpu, DecisionLevelMaxPooling_Dia
 import config
 
 
-Model = DecisionLevelMaxPooling
+Model = DecisionLevelMaxPooling_Dia
 batch_size = 16
 
 
@@ -126,9 +126,9 @@ def train(args):
         dev_train_csv = os.path.join(dataset_dir, 'meta_data', 'meta_traindev.csv')
         dev_validate_csv = os.path.join(dataset_dir, 'meta_data', 'meta_test.csv')
     if isres:
-        models_dir = os.path.join(workspace, 'org_res_models', subdir)
+        models_dir = os.path.join(workspace, 'dia_res_models', subdir)
     else:
-        models_dir = os.path.join(workspace, 'org_models', subdir)
+        models_dir = os.path.join(workspace, 'dia_models', subdir)
     create_folder(models_dir)
 
     # Model
@@ -236,9 +236,9 @@ def inference_validation_data(args):
         dev_train_csv = os.path.join(dataset_dir, 'meta_data', 'meta_traindev.csv')
         dev_validate_csv = os.path.join(dataset_dir, 'meta_data', 'meta_test.csv')
     if isres:
-        model_path = os.path.join(workspace, 'org_res_models', subdir, 'md_{}_iters.tar'.format(iteration_max))
+        model_path = os.path.join(workspace, 'dia_res_models', subdir, 'md_{}_iters.tar'.format(iteration_max))
     else:
-        model_path = os.path.join(workspace, 'org_models', subdir, 'md_{}_iters.tar'.format(iteration_max))
+        model_path = os.path.join(workspace, 'dia_models', subdir, 'md_{}_iters.tar'.format(iteration_max))
 
     # Load model
     model = Model(classes_num, isres)
