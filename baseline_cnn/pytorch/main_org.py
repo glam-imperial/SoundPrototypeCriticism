@@ -58,9 +58,9 @@ def evaluate(model, generator, data_type, max_iteration, cuda):
     loss = F.nll_loss(Variable(torch.Tensor(outputs)), Variable(torch.LongTensor(targets))).data.numpy()
     loss = float(loss)
     
-    accuracy = calculate_accuracy(targets, predictions, classes_num, average='macro')
+    se, sp, as_score, hs_score = calculate_accuracy(targets, predictions, classes_num, average='binary')
 
-    return accuracy, loss
+    return se, sp, as_score, hs_score, loss
 
 def forward(model, generate_func, cuda):
     """Forward data to a model.
@@ -154,21 +154,21 @@ def train(args):
         if iteration % 100 == 0:
             train_fin_time = time.time()
 
-            (tr_acc, tr_loss) = evaluate(model=model,
+            (se, sp, as_score, hs_score, tr_loss) = evaluate(model=model,
                                          generator=generator,
                                          data_type='train',
                                          max_iteration=None,
                                          cuda=cuda)
 
-            logging.info('tr_acc: {:.3f}, tr_loss: {:.3f}'.format(tr_acc, tr_loss))
+            logging.info('se: {:.3f}, sp: {:.3f}, as: {:.3f}, hs: {:.3f}, tr_loss: {:.3f}'.format(se, sp, as_score, hs_score, tr_loss))
 
-            (va_acc, va_loss) = evaluate(model=model,
+            (se, sp, as_score, hs_score, va_loss) = evaluate(model=model,
                                          generator=generator,
                                          data_type='evaluate',
                                          max_iteration=None,
                                          cuda=cuda)
                                 
-            logging.info('va_acc: {:.3f}, va_loss: {:.3f}'.format(va_acc, va_loss))
+            logging.info('se: {:.3f}, sp: {:.3f}, as: {:.3f}, hs: {:.3f}, va_loss: {:.3f}'.format(se, sp, as_score, hs_score, va_loss))
 
             train_time = train_fin_time - train_bgn_time
             validate_time = time.time() - train_fin_time

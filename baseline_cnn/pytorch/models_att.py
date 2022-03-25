@@ -78,7 +78,7 @@ class ConvBlock(nn.Module):
             x = F.relu_(self.bn2(self.conv2(x)))
         elif activation == 'sigmoid':
             x = torch.sigmoid(self.bn2(self.conv2(x)))
-
+        
         if pool_type == 'max':
             x = F.max_pool2d(x, kernel_size=pool_size)
         elif pool_type == 'avg':
@@ -87,9 +87,11 @@ class ConvBlock(nn.Module):
             x1 = F.avg_pool2d(x, kernel_size=pool_size)
             x2 = F.max_pool2d(x, kernel_size=pool_size)
             x = x1 + x2
+        elif pool_type == 'none':
+            x = x 
         else:
             raise Exception('Incorrect argument!')
-
+        
         return x
 
 class DecisionLevelMaxPooling_Att(nn.Module):
@@ -144,19 +146,15 @@ class DecisionLevelMaxPooling_Att(nn.Module):
             x_array = np.squeeze(x_array)
             plt.matshow(x_array.T, origin='lower', aspect='auto', cmap='jet')
             plt.savefig('{}.jpg'.format(audio_name))
+        
+        x = self.cnn_encoder(x) # (batch_size, 512, hidden units)
+        att, output = self.attention(x) # output dim: (batch_size, class_num)
 
-        x = self.cnn_encoder(x)
-        att, output = self.attention(x)
-        return logmel_x, att, output
-
-        # (samples_num, 512, hidden_units)
-        # output = F.max_pool2d(x, kernel_size=x.shape[2:])
-        # output = output.view(output.shape[0:2])
         # for tsne, features before the final fc layer
         # output_tsne = output
-        # output = F.log_softmax(self.fc_final(output), dim=-1)
+        output = F.log_softmax(output, dim=-1)
 
-        #return output_tsne, output
+        return logmel_x, att, output
 
 
 class CNN_encoder(nn.Module):
