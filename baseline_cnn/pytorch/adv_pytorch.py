@@ -169,8 +169,12 @@ def inference_validation_data(args):
     outputs = dict['output']    # (audios_num, classes_num)
     targets = dict['target']    # (audios_num, classes_num)
     adv_failures = dict['adv_failures']
-    print(adv_failures)
-    print(len(adv_failures))
+    
+    # Display the adv_failures
+    for key, value in adv_failures.items():
+        print("There are {} number of samples in class {}".format(len(value), key))
+        print(adv_failures[key])
+    
     predictions = np.argmax(outputs, axis=-1)
     classes_num = outputs.shape[-1]
 
