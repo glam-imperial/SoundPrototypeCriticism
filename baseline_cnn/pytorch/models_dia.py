@@ -9,6 +9,7 @@ import torchlibrosa as tl
 import numpy as np
 import matplotlib.pyplot as plt
 import config
+from fracdiff.torch import fdiff
 
 def move_data_to_gpu(x, cuda):
 
@@ -184,12 +185,6 @@ class DecisionLevelMaxPooling_Dia(nn.Module):
         else:
             self.cnn_encoder = CNN_encoder()
         
-        self.attention = Attention2d(
-            512,
-            classes_num,
-            att_activation='sigmoid',
-            cla_activation='log_softmax')
-
         self.fc_final = nn.Linear(512, classes_num)
 
         self.init_weights()
@@ -203,8 +198,14 @@ class DecisionLevelMaxPooling_Dia(nn.Module):
         x = self.spectrogram_extractor(input)   # (batch_size, 1, time_steps, freq_bins)
         x = self.logmel_extractor(x)    # (batch_size, 1, time_steps, mel_bins)
         batch_size, channel_num, _, mel_bins = x.shape
-        x_diff1 = torch.diff(x, n=1, dim=2, append=x[:, :, -1, :].view((batch_size, channel_num, 1, mel_bins)))
-        x_diff2 = torch.diff(x_diff1, n=1, dim=2, append=x_diff1[:, :, -1, :].view((batch_size, channel_num, 1, mel_bins)))
+        # x_diff1 = fdiff(x, n=1, dim=2, append=x[:, :, -1, :].view((batch_size, channel_num, 1, mel_bins)))
+        # x_diff2 = fdiff(x_diff1, n=1, dim=2, append=x_diff1[:, :, -1, :].view((batch_size, channel_num, 1, mel_bins)))
+        # Use the np.diff since the torch.diff not supported by the CUDA version
+        x_df = x.data.cpu().numpy()
+        x_diff1 = np.diff(x_df, n=1, axis=2, append=x_df[:, :, -1, :].reshape((batch_size, channel_num, 1, mel_bins)))
+        x_diff2 = np.diff(x_diff1, n=1, axis=2, append=x_diff1[:, :, -1, :].reshape((batch_size, channel_num, 1, mel_bins)))
+        x_diff1 = move_data_to_gpu(x_diff1, True)
+        x_diff2 = move_data_to_gpu(x_diff2, True)
         x = torch.cat((x, x_diff1, x_diff2), dim=1)
         logmel_x = x
         if ifplot:

@@ -10,11 +10,13 @@ __pycache__/
 
 # sh files
 *.sh
+*.sh
 
 # database related 
 ICBHI_meta/
 data_experiment/
 experiment_workspace/
+ICBHI_final_database/
 
 # C extensions
 *.so
