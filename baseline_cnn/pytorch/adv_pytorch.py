@@ -19,18 +19,18 @@ from utilities import (create_folder, get_filename, create_logging,
 from attackers import BIM
 from models_org import move_data_to_gpu, DecisionLevelMaxPooling
 from models_att import DecisionLevelMaxPooling_Att
-from models_dia_att import DecisionLevelMaxPooling_Dia_Att
+from models_dia_att import move_data_to_gpu, DecisionLevelMaxPooling_Dia_Att
 import config
 
 
-Model = DecisionLevelMaxPooling
-Model = DecisionLevelMaxPooling_Att
+# Model = DecisionLevelMaxPooling
+# Model = DecisionLevelMaxPooling_Att
 Model = DecisionLevelMaxPooling_Dia_Att
 batch_size = 16
 CLIP_MAX = 0.5
 CLIP_MIN = -0.5
-prototypes = ['193_1b2_Ar_mc_AKGC417L_0.wav', '186_2b3_Lr_mc_AKGC417L_4.wav', '193_1b2_Al_mc_AKGC417L_10.wav', '114_1b4_Pl_mc_AKGC417L_2.wav']
-criticisms = ['141_1b1_Pr_mc_LittC2SE_0.wav', '199_2b1_Ll_mc_LittC2SE_1.wav', '112_1p1_Ll_sc_Litt3200_4.wav', '141_1b2_Ar_mc_LittC2SE_3.wav']
+# prototypes = ['193_1b2_Ar_mc_AKGC417L_0.wav', '186_2b3_Lr_mc_AKGC417L_4.wav', '193_1b2_Al_mc_AKGC417L_10.wav', '114_1b4_Pl_mc_AKGC417L_2.wav']
+# criticisms = ['141_1b1_Pr_mc_LittC2SE_0.wav', '199_2b1_Ll_mc_LittC2SE_1.wav', '112_1p1_Ll_sc_Litt3200_4.wav', '141_1b2_Ar_mc_LittC2SE_3.wav']
 
 def forward(model, generate_func, cuda, attacker):
     """Forward data to a model.
@@ -62,16 +62,17 @@ def forward(model, generate_func, cuda, attacker):
         batch_x_adv = torch.zeros(batch_x.shape)
         batch_x_adv = move_data_to_gpu(batch_x_adv, cuda)
         # Attack
-        # for i in range(len(batch_x)):
-        #    batch_x_adv[i] = attacker.generate(model, batch_x[i], batch_y[i])
+        for i in range(len(batch_x)):
+            batch_x_adv[i] = attacker.generate(model, batch_x[i], batch_y[i])
         
         model.eval()
         # batch_size = 1 just for plotting the log Mel spectrograms
         # ifplot = batch_audio_names[0] in prototypes or batch_audio_names[0] in criticisms
-        batch_tsne, batch_output = model(batch_x, False, batch_audio_names[0])# (audios_num, classes_num)
+        # batch_tsne, batch_output = model(batch_x, False, batch_audio_names[0])# (audios_num, classes_num)
+        logmel_x, att, batch_output = model(batch_x, False, batch_audio_names[0])# (audios_num, classes_num)
         outputs.append(batch_output.data.cpu().numpy())
-        tsnes.append(batch_tsne.data.cpu().numpy())
-        _, batch_output_adv = model(batch_x_adv, False, batch_audio_names[0])# (audios_num, classes_num)
+        # tsnes.append(batch_tsne.data.cpu().numpy())
+        _, _, batch_output_adv = model(batch_x_adv, False, batch_audio_names[0])# (audios_num, classes_num)
         
         batch_output = batch_output.data.cpu().numpy()
         batch_output_adv = batch_output_adv.data.cpu().numpy()
@@ -80,14 +81,14 @@ def forward(model, generate_func, cuda, attacker):
         batch_output = np.argmax(batch_output, axis=-1)
         batch_output_adv = np.argmax(batch_output_adv, axis=-1)
         # Search for Prototypes
-        #for i in range(len(batch_output)):
-        #    if batch_output[i] == batch_y[i] and batch_output[i] != batch_output_adv[i]:
-        #        adv_failures[batch_y[i]].append(batch_audio_names[i])
+        for i in range(len(batch_output)):
+            if batch_output[i] == batch_y[i] and batch_output[i] != batch_output_adv[i]:
+                adv_failures[batch_y[i]].append(batch_audio_names[i])
         
     dict = {}
 
-    tsnes = np.concatenate(tsnes, axis=0)
-    dict['tsne'] = tsnes
+    # tsnes = np.concatenate(tsnes, axis=0)
+    # dict['tsne'] = tsnes
 
     outputs = np.concatenate(outputs, axis=0)
     dict['output'] = outputs
@@ -113,11 +114,12 @@ def inference_validation_data(args):
     iteration_max = args.iteration_max
     filename = args.filename
     cuda = args.cuda
+    isres = args.isres
     
     # for the BIM
     eps = args.eps
     steps = args.steps
-    attacker = BIM(eps=eps, eps_iter=0.0000001, n_iter=steps, clip_max=CLIP_MAX, clip_min=CLIP_MIN)
+    attacker = BIM(eps=0.01, eps_iter=eps, n_iter=steps, clip_max=CLIP_MAX, clip_min=CLIP_MIN)
     print('eps:{}, steps:{}'.format(eps, steps))
     
     labels = config.labels
@@ -131,10 +133,13 @@ def inference_validation_data(args):
         dev_train_csv = os.path.join(dataset_dir, 'meta_data', 'meta_traindev.csv')
         dev_validate_csv = os.path.join(dataset_dir, 'meta_data', 'meta_test.csv')
 
-    model_path = os.path.join(workspace, 'models', subdir, 'md_{}_iters.tar'.format(iteration_max))
+    if isres:
+        model_path = os.path.join(workspace, 'dia_att_res_models', subdir, 'md_{}_iters.tar'.format(iteration_max))
+    else:
+        model_path = os.path.join(workspace, 'dia_att_models', subdir, 'md_{}_iters.tar'.format(iteration_max))
 
     # Load model
-    model = Model(classes_num)
+    model = Model(classes_num, isres)
     param_num = sum(p.numel() for p in model.parameters() if p.requires_grad)
     # print('param number:')
     # print(param_num)
@@ -164,11 +169,12 @@ def inference_validation_data(args):
     outputs = dict['output']    # (audios_num, classes_num)
     targets = dict['target']    # (audios_num, classes_num)
     adv_failures = dict['adv_failures']
-    # print(adv_failures)
-    # print(len(adv_failures))
+    print(adv_failures)
+    print(len(adv_failures))
     predictions = np.argmax(outputs, axis=-1)
     classes_num = outputs.shape[-1]
 
+    '''
     # tsne
     tsnes = dict['tsne']
     audio_names = dict['audio_name']
@@ -183,6 +189,7 @@ def inference_validation_data(args):
     cris = [audio_names.tolist().index(i) for i in criticisms]
     fig1 = plot_embedding_2D(result_2D, targets, pros, cris, 't-SNE-2D')
     fig2 = plot_embedding_3D(result_3D, targets, pros, cris, 't-SNE-3D')
+    '''
 
     # Evaluate
     confusion_matrix = calculate_confusion_matrix(targets, predictions, classes_num)
@@ -191,10 +198,10 @@ def inference_validation_data(args):
     se, sp, as_score, hs_score = calculate_accuracy(targets, predictions, classes_num, average='binary')
 
     # Print
-    # print_accuracy(class_wise_accuracy, labels)
-    # print_confusion_matrix(confusion_matrix, labels)
+    print_accuracy(class_wise_accuracy, labels)
+    print_confusion_matrix(confusion_matrix, labels)
     #print('confusion_matrix: \n', confusion_matrix)
-    # print_accuracy_binary(se, sp, as_score, hs_score, labels)
+    print_accuracy_binary(se, sp, as_score, hs_score, labels)
 
 
 
@@ -228,6 +235,7 @@ if __name__ == '__main__':
     parser_inference_validation_data.add_argument('--validate', action='store_true', default=False)
     parser_inference_validation_data.add_argument('--iteration_max', type=int, required=True)
     parser_inference_validation_data.add_argument('--cuda', action='store_true', default=False)
+    parser_inference_validation_data.add_argument('--isres', action='store_true', default=False)
 
     # For the BIM
     parser_inference_validation_data.add_argument('--steps', type=int, required=True)
