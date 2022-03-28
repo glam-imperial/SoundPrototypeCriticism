@@ -321,13 +321,13 @@ def plot_att(atts_label, atts_org, atts):
         plt.close()
  
         median_val = np.median(att)
-        att_org = atts_org[key][0] # (1, 126, 128)
+        att_org = atts_org[key][0][0] # (1, 126, 128)
         att_org = np.squeeze(att_org) # (126, 128)
         for iy, ix in np.ndindex(att.shape):
             if att[iy, ix] < median_val:
                 att_org[iy, ix] = None
         
-        im = plt.matshow(att_org.T, origin='lower', aspect='auto', cmap='jet')
+        im = plt.matshow(att_org.T, origin='lower', aspect='auto', cmap='jet', vmax=-0.8)
         # plt.colorbar(im)
         plt.savefig('{}_att_org.jpg'.format(key))
         plt.close()
@@ -344,13 +344,13 @@ def plot_embedding_2D(data, label, pros, cris, title):
     fig = plt.figure()
     for i in range(data.shape[0]):
         if i in pros:
-            plt.text(data[i, 0], data[i, 1], str(label[i])+'_pro',
+            plt.text(data[i, 0], data[i, 1], str('*'),
                      color=plt.cm.Set1(label[i]),
-                     fontdict={'weight': 'bold', 'size': 15})
+                     fontdict={'weight': 'bold', 'size': 12})
         elif i in cris:
-            plt.text(data[i, 0], data[i, 1], str(label[i])+'_cri',
+            plt.text(data[i, 0], data[i, 1], str('+'),
                      color=plt.cm.Set1(label[i]),
-                     fontdict={'weight': 'bold', 'size': 15})
+                     fontdict={'weight': 'bold', 'size': 12})
         else:
             plt.text(data[i, 0], data[i, 1], str(label[i]),
                      color=plt.cm.Set1(label[i]),
@@ -358,13 +358,13 @@ def plot_embedding_2D(data, label, pros, cris, title):
 
     # plt.xticks([])
     # plt.yticks([])
-    plt.title(title)
+    # plt.title(title)
     patch_0 = mpatches.Patch(color=plt.cm.Set1(0), label='Normal')
     patch_1 = mpatches.Patch(color=plt.cm.Set1(1), label='Crackle')
     patch_2 = mpatches.Patch(color=plt.cm.Set1(2), label='Wheeze')
     patch_3 = mpatches.Patch(color=plt.cm.Set1(3), label='Both')
     plt.legend(handles=[patch_0, patch_1, patch_2, patch_3])
-    plt.savefig('{}.pdf'.format(title))
+    plt.savefig('{}_new.pdf'.format(title))
     plt.close()
 
 def plot_embedding_3D(data,label, pros, cris, title):
@@ -375,9 +375,9 @@ def plot_embedding_3D(data,label, pros, cris, title):
     ax =fig.add_subplot(111,projection='3d')
     for i in range(data.shape[0]):
         if i in pros:
-            ax.text(data[i, 0], data[i, 1], data[i,2],str(label[i])+'_pro', color=plt.cm.Set1(label[i]),fontdict={'weight': 'bold', 'size': 15})
+            ax.text(data[i, 0], data[i, 1], data[i,2],str('*'), color=plt.cm.Set1(label[i]),fontdict={'weight': 'bold', 'size': 12})
         elif i in cris:
-            ax.text(data[i, 0], data[i, 1], data[i,2],str(label[i])+'_cris', color=plt.cm.Set1(label[i]),fontdict={'weight': 'bold', 'size': 15})
+            ax.text(data[i, 0], data[i, 1], data[i,2],str('+'), color=plt.cm.Set1(label[i]),fontdict={'weight': 'bold', 'size': 12})
         else:
             ax.text(data[i, 0], data[i, 1], data[i,2],str(label[i]), color=plt.cm.Set1(label[i]),fontdict={'weight': 'light', 'size': 5})
     plt.savefig('{}.pdf'.format(title))

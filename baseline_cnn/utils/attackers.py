@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import os
 import sys
 sys.path.insert(1, os.path.join(sys.path[0], '../pytorch'))
-from models_pytorch import move_data_to_gpu
+from models_dia_att import move_data_to_gpu
 
 class Attacker:
     def __init__(self, clip_max=0.5, clip_min=-0.5):
@@ -37,7 +37,7 @@ class BIM(Attacker):
         eta = eta.cuda()
 
         for i in range(self.n_iter):
-            out = model(nx+eta, False, 'no')
+            _, _, out = model(nx+eta, False, 'no')
             loss = F.cross_entropy(out, ny)
             loss.backward()
 
