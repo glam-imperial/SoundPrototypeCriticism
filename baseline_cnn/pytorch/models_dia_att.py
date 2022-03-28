@@ -217,7 +217,7 @@ class DecisionLevelMaxPooling_Dia_Att(nn.Module):
         if ifplot:
             x_array = x.data.cpu().numpy()[0][0]
             x_array = np.squeeze(x_array)
-            plt.matshow(x_array.T, origin='lower', aspect='auto', cmap='jet')
+            plt.matshow(x_array.T, origin='lower', aspect='auto', cmap='jet', vmax=-1)
             plt.savefig('{}.jpg'.format(audio_name))
 
         x = self.cnn_encoder(x)

@@ -6,6 +6,9 @@ import argparse
 import time
 import logging
 from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
+# from tsnecuda import TSNE
+# from cuml.manifold import TSNE
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
@@ -90,7 +93,7 @@ def forward(model, generate_func, cuda, attacker):
         logmel_x, att, batch_output = model(batch_x, ifplot, batch_audio_names[0])# (audios_num, classes_num)
         outputs.append(batch_output.data.cpu().numpy())
         # print(activation['cnn_encoder'].shape)
-        tsnes.append(activation['cnn_encoder'].data.cpu().numpy())
+        tsnes.append(activation['attention'].data.cpu().numpy())
         # For the attention matrix visualisation
         if ifplot:
             atts_label[batch_audio_names[0]] = batch_output.data.cpu().numpy()
@@ -183,7 +186,7 @@ def inference_validation_data(args):
     if cuda:
         model.cuda()
     
-    model.cnn_encoder.register_forward_hook(get_activation('cnn_encoder'))
+    model.cnn_encoder.register_forward_hook(get_activation('attention'))
     # Predict & evaluate
     # Data generator
     generator = DataGenerator(dataset_dir = dataset_dir,
@@ -223,15 +226,24 @@ def inference_validation_data(args):
     # tsne
     tsnes = dict['tsne']
     audio_names = dict['audio_name']
-    print(len(tsnes), len(targets))
     # Faltten the inputs for tsne
     tsnes = tsnes.reshape(tsnes.shape[0], -1)
-    tsne_2D = TSNE(n_components=2, init='pca', learning_rate='auto')
+    # PCA for faster preprocessing
+    print('################## PCA initialised ###############')
+    pca_50 = PCA(n_components=100)
+    tsnes = pca_50.fit_transform(tsnes)
+    print('################## PCA finished  ###############')
+    # tsne_2D = TSNE(n_components=2, learning_rate='auto', n_jobs=-1)
+    tsne_2D = TSNE(n_components=2, learning_rate='auto')
+    print('################## TSNE initialised ###############')
     result_2D = tsne_2D.fit_transform(tsnes)
+    print('################## Finished transform #############')
+    np.savetxt('tsne_np.txt', result_2D)
     # tsne_3D = TSNE(n_components=3, init='pca', learning_rate='auto', perplexity=50, n_iter=5000)
     # result_3D = tsne_3D.fit_transform(tsnes)
     pros = [audio_names.tolist().index(i) for i in prototypes]
     cris = [audio_names.tolist().index(i) for i in criticisms]
+    print('################## Sarted plotting ################')
     fig1 = plot_embedding_2D(result_2D, targets, pros, cris, 't-SNE-2D')
     # fig2 = plot_embedding_3D(result_3D, targets, pros, cris, 't-SNE-3D')
     

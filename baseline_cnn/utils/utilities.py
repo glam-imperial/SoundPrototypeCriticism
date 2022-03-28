@@ -327,7 +327,7 @@ def plot_att(atts_label, atts_org, atts):
             if att[iy, ix] < median_val:
                 att_org[iy, ix] = None
         
-        im = plt.matshow(att_org.T, origin='lower', aspect='auto', cmap='jet', vmax=-0.8)
+        im = plt.matshow(att_org.T, origin='lower', aspect='auto', cmap='jet', vmax=-1)
         # plt.colorbar(im)
         plt.savefig('{}_att_org.jpg'.format(key))
         plt.close()
@@ -346,13 +346,13 @@ def plot_embedding_2D(data, label, pros, cris, title):
         if i in pros:
             plt.text(data[i, 0], data[i, 1], str('*'),
                      color=plt.cm.Set1(label[i]),
-                     fontdict={'weight': 'bold', 'size': 12})
+                     fontdict={'weight': 'bold', 'size': 15})
         elif i in cris:
             plt.text(data[i, 0], data[i, 1], str('+'),
                      color=plt.cm.Set1(label[i]),
-                     fontdict={'weight': 'bold', 'size': 12})
+                     fontdict={'weight': 'bold', 'size': 15})
         else:
-            plt.text(data[i, 0], data[i, 1], str(label[i]),
+            plt.text(data[i, 0], data[i, 1], str('.'),
                      color=plt.cm.Set1(label[i]),
                      fontdict={'weight': 'light', 'size': 5})
 
