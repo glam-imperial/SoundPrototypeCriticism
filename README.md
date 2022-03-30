@@ -1,4 +1,4 @@
-# Prototype Learning for Interpretable Respiratory Sound Analysis
+# Example-based Explanations with Adversarial Attacks for Respiratory Sound Analysis
 [![arXiv](https://img.shields.io/badge/arXiv-2110.03536-b31b1b.svg)](https://arxiv.org/abs/2110.03536)
 [![Hugging Face Models](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-blue)](https://huggingface.co/models)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -11,36 +11,11 @@ This is a Python and PyTorch code for the prototype learning framework in our pa
 
 >Zhao Ren, Thanh Tam Nguyen, and Wolfgang Nejdl. Prototype Learning for Interpretable Respiratory Sound Analysis. In ICASSP 2022. https://arxiv.org/abs/2110.03536
 
-## Citation
-
-```
-@article{zhao2022prototype,
-  title={Prototype Learning for Interpretable Respiratory Sound Analysis},
-  author={Ren, Zhao and Nguyen, Thanh Tam and Nejdl, Wolfgang},
-  booktitle = {{IEEE} International Conference on Acoustics, Speech and Signal Processing},
-  year={2022}
-}
-```
-
-or 
-
-```
-@misc{ren2022prototype,
-      title={Prototype Learning for Interpretable Respiratory Sound Analysis}, 
-      author={Zhao Ren and Thanh Tam Nguyen and Wolfgang Nejdl},
-      year={2022},
-      eprint={2110.03536},
-      archivePrefix={arXiv},
-      primaryClass={cs.SD}
-}
-```
-
 ## Abstract
 
-The prototype learning framework aims to generate prototypes of audio singnals for a respiratory sound classification task (normal/crackle/wheeze/both). 
-
-The experiments are based on the ICBHI 2017 challenge database.
-
+Respiratory sound classification is an important tool for remote screening of respiratory-related diseases such as pneumonia, asthma, and COVID-19. To facilitate the interpretability of classification results, especially ones based on deep learning, many explanation methods have been proposed using 
+prototypes. However, existing explanation techniques often assume that the data is non-biased and the prediction results can be explained by a set of prototypical examples. In this work, we develop a unified example-based explanation method for selecting both representative data (prototypes) and outliers (criticisms). In particular, we propose a novel application of adversarial attacks to generate an explanation spectrum of data instances via an iterative fast gradient sign method. Such unified explanation can avoid over-generalisation and bias by allowing human experts to assess the model mistakes case by case. We performed a wide range of quantitative and qualitative evaluations to show that our approach 
+generates effective and understandable explanation and is robust with many deep learning models. 
 
 ## Preprocessing
 
