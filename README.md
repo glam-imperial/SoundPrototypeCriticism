@@ -1,7 +1,7 @@
 # Example-based Explanations with Adversarial Attacks for Respiratory Sound Analysis
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![](paper/framework.jpg)
+![](framework.jpg)
 
 This is a Python and PyTorch code for the prototype learning framework in our paper: 
 
