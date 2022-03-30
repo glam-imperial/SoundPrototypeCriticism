@@ -1,7 +1,7 @@
 # Example-based Explanations with Adversarial Attacks for Respiratory Sound Analysis
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![](paper/framework.pdf)
+![](paper/framework.jpg)
 
 This is a Python and PyTorch code for the prototype learning framework in our paper: 
 
@@ -17,21 +17,22 @@ prototypes. However, existing explanation techniques often assume that the data 
 generates effective and understandable explanation and is robust with many deep learning models. 
 
 ## Preprocessing
-
+```
 python preprocessing/preprocessing.py
 
 python preprocessing/data_split.py
 
+```
 
 ## Training and Test
 1. For CNN-8 and ResNet development:
-
+```
 sh run.sh
-
+```
 2. For prototype and criticisms selection: 
-
+```
 sh adv.sh
-
+```
 
 
 
