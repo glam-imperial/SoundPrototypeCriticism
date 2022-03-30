@@ -1,15 +1,14 @@
 # Example-based Explanations with Adversarial Attacks for Respiratory Sound Analysis
-[![arXiv](https://img.shields.io/badge/arXiv-2110.03536-b31b1b.svg)](https://arxiv.org/abs/2110.03536)
-[![Hugging Face Models](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-blue)](https://huggingface.co/models)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![](paper/framework.png)
+![](paper/framework.pdf)
 
 This is a Python and PyTorch code for the prototype learning framework in our paper: 
 
-<!--[Prototype learning for interpretable respiratory sound analysis](https://arxiv.org/pdf/2110.03536.pdf).-->
+<!--[Prototype learning for interpretable respiratory sound analysis].-->
 
->Zhao Ren, Thanh Tam Nguyen, and Wolfgang Nejdl. Prototype Learning for Interpretable Respiratory Sound Analysis. In ICASSP 2022. https://arxiv.org/abs/2110.03536
+>Yi Chang, Zhao Ren, Thanh Tam Nguyen, Wolfgang Nejdl, and Björn W. Schuller. Example-based Explanations with Adversarial Attacks
+for Respiratory Sound Analysis. Submitted to INTERSPEECH 2022. 
 
 ## Abstract
 
@@ -19,40 +18,20 @@ generates effective and understandable explanation and is robust with many deep 
 
 ## Preprocessing
 
-python3 preprocessing/preprocessing.py
+python preprocessing/preprocessing.py
 
-python3 preprocessing/data_split.py
+python preprocessing/data_split.py
 
 
 ## Training and Test
-1. For the basic CNN model without generating prototypes:
+1. For CNN-8 and ResNet development:
 
 sh run.sh
 
-2. For CNN models with generating prototypes:
+2. For prototype and criticisms selection: 
 
-sh run_prototype.sh 
-
-Note:The variant of 'PROTO_FORM' can be adapted for different prototype learning approaches:
-
-Prototype-1D: PROTO_FORM='vector1d'
-
-Prototype-2D-EleSim-Van: PROTO_FORM='vector2d'
-
-Prototype-2D-EleSim-Att: PROTO_FORM='vector2d_att'
-
-Prototype-2D-AvgSim-Van: PROTO_FORM='vector2d_avgp'
-
-Prototype-2D-MaxSim-Van: PROTO_FORM='vector2d_maxp'
-
-Prototype-2D-MaxSim-Att: PROTO_FORM='vector2d_maxp_att'
+sh adv.sh
 
 
-<!---
-## Cite
-If you use the code from this repositroy, please cite the following reference in your paper:
-
-[1] Zhao Ren, Thanh Tam Nguyen, and Wolfgang Nejdl. "Prototype learning for interpretable respiratory sound analysis." arXiv:2110.03536, 2021, 5 pages. 
--->
 
 
