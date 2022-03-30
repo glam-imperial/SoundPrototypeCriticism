@@ -15,7 +15,7 @@ from data_generator import DataGenerator
 from utilities import (create_folder, get_filename, create_logging,
                        calculate_confusion_matrix, calculate_accuracy, 
                        print_confusion_matrix, print_accuracy, print_accuracy_binary)
-from models_pytorch import move_data_to_gpu, DecisionLevelMaxPooling
+from models_org import move_data_to_gpu, DecisionLevelMaxPooling
 import config
 
 
@@ -58,9 +58,9 @@ def evaluate(model, generator, data_type, max_iteration, cuda):
     loss = F.nll_loss(Variable(torch.Tensor(outputs)), Variable(torch.LongTensor(targets))).data.numpy()
     loss = float(loss)
     
-    accuracy = calculate_accuracy(targets, predictions, classes_num, average='macro')
+    se, sp, as_score, hs_score = calculate_accuracy(targets, predictions, classes_num, average='binary')
 
-    return accuracy, loss
+    return se, sp, as_score, hs_score, loss
 
 def forward(model, generate_func, cuda):
     """Forward data to a model.
@@ -85,7 +85,7 @@ def forward(model, generate_func, cuda):
         batch_x = move_data_to_gpu(batch_x, cuda)
         # Predict
         model.eval()
-        batch_output = model(batch_x)
+        _, _, batch_output = model(batch_x, False, 'none')
 
         # Append data
         outputs.append(batch_output.data.cpu().numpy())
@@ -113,6 +113,7 @@ def train(args):
     validate = args.validate
     iteration_max = args.iteration_max
     cuda = args.cuda
+    isres = args.isres
 
     labels = config.labels
     classes_num = len(labels)
@@ -124,12 +125,14 @@ def train(args):
     else:
         dev_train_csv = os.path.join(dataset_dir, 'meta_data', 'meta_traindev.csv')
         dev_validate_csv = os.path.join(dataset_dir, 'meta_data', 'meta_test.csv')
-        
-    models_dir = os.path.join(workspace, 'models', subdir)
+    if isres:
+        models_dir = os.path.join(workspace, 'org_res_models', subdir)
+    else:
+        models_dir = os.path.join(workspace, 'org_models', subdir)
     create_folder(models_dir)
 
     # Model
-    model = Model(classes_num)
+    model = Model(classes_num, isres)
 
     if cuda:
         model.cuda()
@@ -154,21 +157,21 @@ def train(args):
         if iteration % 100 == 0:
             train_fin_time = time.time()
 
-            (tr_acc, tr_loss) = evaluate(model=model,
+            (se, sp, as_score, hs_score, tr_loss) = evaluate(model=model,
                                          generator=generator,
                                          data_type='train',
                                          max_iteration=None,
                                          cuda=cuda)
 
-            logging.info('tr_acc: {:.3f}, tr_loss: {:.3f}'.format(tr_acc, tr_loss))
+            logging.info('se: {:.3f}, sp: {:.3f}, as: {:.3f}, hs: {:.3f}, tr_loss: {:.3f}'.format(se, sp, as_score, hs_score, tr_loss))
 
-            (va_acc, va_loss) = evaluate(model=model,
+            (se, sp, as_score, hs_score, va_loss) = evaluate(model=model,
                                          generator=generator,
                                          data_type='evaluate',
                                          max_iteration=None,
                                          cuda=cuda)
                                 
-            logging.info('va_acc: {:.3f}, va_loss: {:.3f}'.format(va_acc, va_loss))
+            logging.info('se: {:.3f}, sp: {:.3f}, as: {:.3f}, hs: {:.3f}, va_loss: {:.3f}'.format(se, sp, as_score, hs_score, va_loss))
 
             train_time = train_fin_time - train_bgn_time
             validate_time = time.time() - train_fin_time
@@ -196,7 +199,7 @@ def train(args):
         batch_y = move_data_to_gpu(batch_y, cuda)
         # Train
         model.train()
-        batch_output = model(batch_x)
+        _, _, batch_output = model(batch_x, False, 'none')
 
         loss = F.nll_loss(batch_output, batch_y, weight=class_weight)
 
@@ -220,6 +223,7 @@ def inference_validation_data(args):
     iteration_max = args.iteration_max
     filename = args.filename
     cuda = args.cuda
+    isres = args.isres
 
     labels = config.labels
     classes_num = len(labels)
@@ -231,11 +235,13 @@ def inference_validation_data(args):
     else:
         dev_train_csv = os.path.join(dataset_dir, 'meta_data', 'meta_traindev.csv')
         dev_validate_csv = os.path.join(dataset_dir, 'meta_data', 'meta_test.csv')
-
-    model_path = os.path.join(workspace, 'models', subdir, 'md_{}_iters.tar'.format(iteration_max))
+    if isres:
+        model_path = os.path.join(workspace, 'org_res_models', subdir, 'md_{}_iters.tar'.format(iteration_max))
+    else:
+        model_path = os.path.join(workspace, 'org_models', subdir, 'md_{}_iters.tar'.format(iteration_max))
 
     # Load model
-    model = Model(classes_num)
+    model = Model(classes_num, isres)
     param_num = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('param number:')
     print(param_num)
@@ -302,6 +308,7 @@ if __name__ == '__main__':
     parser_train.add_argument('--validate', action='store_true', default=False)
     parser_train.add_argument('--iteration_max', type=int, required=True)
     parser_train.add_argument('--cuda', action='store_true', default=False)
+    parser_train.add_argument('--isres', action='store_true', default=False)
     
     parser_inference_validation_data = subparsers.add_parser('inference_validation_data')
     parser_inference_validation_data.add_argument('--dataset_dir', type=str, required=True)
@@ -310,6 +317,7 @@ if __name__ == '__main__':
     parser_inference_validation_data.add_argument('--validate', action='store_true', default=False)
     parser_inference_validation_data.add_argument('--iteration_max', type=int, required=True)
     parser_inference_validation_data.add_argument('--cuda', action='store_true', default=False)
+    parser_inference_validation_data.add_argument('--isres', action='store_true', default=False)
 
     args = parser.parse_args()
 
