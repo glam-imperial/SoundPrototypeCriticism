@@ -32,13 +32,6 @@ Model = DecisionLevelMaxPooling_Dia_Att
 batch_size = 1
 CLIP_MAX = 0.5
 CLIP_MIN = -0.5
-# For the log mel
-# prototypes = ['213_2p2_Tc_mc_AKGC417L_6.wav', '158_2p2_Ar_mc_AKGC417L_6.wav', '193_1b2_Ar_mc_AKGC417L_10.wav', '158_2p2_Ar_mc_AKGC417L_4.wav']
-# criticisms = ['157_1b1_Ar_sc_Meditron_6.wav', '138_1p3_Pl_mc_AKGC417L_3.wav', '158_1p3_Ll_mc_AKGC417L_1.wav', '107_3p2_Tc_mc_AKGC417L_4.wav']
-
-# For TSNE:
-prototypes = ['166_1p1_Al_sc_Meditron_5.wav', '213_2p2_Tc_mc_AKGC417L_6.wav', '158_2p2_Ar_mc_AKGC417L_6.wav', '193_1b2_Ar_mc_AKGC417L_10.wav', '158_2p2_Ar_mc_AKGC417L_4.wav', '130_1p4_Tc_mc_AKGC417L_0.wav', '158_2p3_Tc_mc_AKGC417L_0.wav', '158_2p3_Tc_mc_AKGC417L_8.wav']
-criticisms = ['107_2b5_Pr_mc_AKGC417L_0.wav', '130_1p3_Pr_mc_AKGC417L_5.wav', '157_1b1_Ar_sc_Meditron_6.wav', '193_7b3_Pr_mc_AKGC417L_4.wav', '130_2p5_Ar_mc_AKGC417L_1.wav', '138_1p2_Pl_mc_AKGC417L_2.wav', '138_1p3_Pl_mc_AKGC417L_3.wav', '158_1p3_Al_mc_AKGC417L_3.wav', '200_2p2_Tc_mc_AKGC417L_1.wav', '218_1b1_Lr_sc_Meditron_10.wav', '158_1p3_Ll_mc_AKGC417L_1.wav', '107_3p2_Tc_mc_AKGC417L_0.wav', '107_3p2_Tc_mc_AKGC417L_4.wav', '158_2p3_Tc_mc_AKGC417L_5.wav']
 
 
 activation = {}
