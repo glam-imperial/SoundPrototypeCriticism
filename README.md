@@ -8,7 +8,7 @@ This is a Python and PyTorch code for the prototype learning framework in our pa
 <!--[Prototype learning for interpretable respiratory sound analysis].-->
 
 >Yi Chang, Zhao Ren, Thanh Tam Nguyen, Wolfgang Nejdl, and Björn W. Schuller. Example-based Explanations with Adversarial Attacks
-for Respiratory Sound Analysis. Submitted to INTERSPEECH 2022. 
+for Respiratory Sound Analysis. Accepted by INTERSPEECH 2022. 
 
 ## Abstract
 
