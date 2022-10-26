@@ -11,6 +11,19 @@ This is a Python and PyTorch code for the prototype learning framework in our pa
 >Yi Chang, Zhao Ren, Thanh Tam Nguyen, Wolfgang Nejdl, and Björn W. Schuller. Example-based Explanations with Adversarial Attacks
 for Respiratory Sound Analysis. Accepted by INTERSPEECH 2022. 
 
+## Citation
+
+```
+@inproceedings{chang22h_interspeech,
+  author={Yi Chang and Zhao Ren and Thanh Tam Nguyen and Wolfgang Nejdl and Björn W. Schuller},
+  title={{Example-based Explanations with Adversarial Attacks for Respiratory Sound Analysis}},
+  year=2022,
+  booktitle={Proc. Interspeech 2022},
+  pages={4003--4007},
+  doi={10.21437/Interspeech.2022-11355}
+}
+```
+
 ## Abstract
 
 Respiratory sound classification is an important tool for remote screening of respiratory-related diseases such as pneumonia, asthma, and COVID-19. To facilitate the interpretability of classification results, especially ones based on deep learning, many explanation methods have been proposed using 
